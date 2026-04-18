@@ -36,7 +36,6 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-        // If email confirmation is required, no session is returned
         if (!data.session) {
           toast({
             title: "Check your inbox",
@@ -122,3 +121,4 @@ const Auth = () => {
 };
 
 export default Auth;
+
