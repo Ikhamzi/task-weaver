@@ -26,7 +26,7 @@ Operating rules:
 1. ALWAYS reason step-by-step. Break complex requests (e.g. "plan a trip and email me") into multiple tool calls.
 2. Use tools to actually DO work — don't just describe steps, execute them.
 3. When a user gives a relative date ("tomorrow", "next weekend"), resolve it to an ISO timestamp using the current date provided.
-4. When sending email, use the user's email unless they specify a different recipient.
+4. When sending email, use the user's email unless they specify a different recipient. NOTE: emails are sent via Resend's test sender (onboarding@resend.dev), which can ONLY deliver to the verified Resend account owner's address. If the user asks to email someone else, send it but warn that it will only arrive if that address is verified on Resend.
 5. Be concise but warm. Use markdown for itineraries / lists.
 6. After executing tools, give the user a clear summary of what you did.`;
 
@@ -222,14 +222,46 @@ async function executeTool(
         return { ok: true, events: data };
       }
       case "send_email": {
-        // Mocked email — log it. Wire up real transactional email later.
-        console.log("[send_email]", { to: args.to, subject: args.subject });
-        return {
-          ok: true,
-          delivered_to: args.to,
-          subject: args.subject,
-          note: "Email logged (mock). Configure email domain to enable real delivery.",
-        };
+        const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+        if (!RESEND_API_KEY) {
+          return { ok: false, error: "RESEND_API_KEY not configured" };
+        }
+        try {
+          // Convert plain text / markdown body to simple HTML (preserve line breaks)
+          const bodyText = String(args.body ?? "");
+          const html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #1a1a1a; max-width: 640px; margin: 0 auto; padding: 24px;">
+            ${bodyText
+              .split(/\n\n+/)
+              .map((p) => `<p style="margin: 0 0 16px;">${p.replace(/\n/g, "<br/>")}</p>`)
+              .join("")}
+            <hr style="border:none;border-top:1px solid #eee;margin:24px 0;"/>
+            <p style="font-size:12px;color:#888;">Sent by Aether — your AI task agent.</p>
+          </div>`;
+
+          const r = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${RESEND_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from: "Aether <onboarding@resend.dev>",
+              to: [String(args.to)],
+              subject: String(args.subject),
+              html,
+              text: bodyText,
+            }),
+          });
+          const j = await r.json();
+          if (!r.ok) {
+            console.error("[send_email] resend error", j);
+            return { ok: false, error: j?.message || `Resend ${r.status}`, details: j };
+          }
+          console.log("[send_email] sent", { id: j.id, to: args.to });
+          return { ok: true, id: j.id, delivered_to: args.to, subject: args.subject };
+        } catch (e) {
+          return { ok: false, error: e instanceof Error ? e.message : String(e) };
+        }
       }
       case "web_search": {
         // Lightweight DuckDuckGo Instant Answer fallback (no API key required).
