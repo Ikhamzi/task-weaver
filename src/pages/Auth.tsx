@@ -27,7 +27,7 @@ const Auth = () => {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -36,12 +36,28 @@ const Auth = () => {
           },
         });
         if (error) throw error;
+        // If email confirmation is required, no session is returned
+        if (!data.session) {
+          toast({
+            title: "Check your inbox",
+            description: `We sent a verification link to ${email}. Confirm it to sign in.`,
+          });
+          setMode("signin");
+          setPassword("");
+          return;
+        }
         toast({ title: "Welcome to Aether", description: "Account created — taking you in." });
+        navigate("/", { replace: true });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          if (error.message.toLowerCase().includes("email not confirmed")) {
+            throw new Error("Please verify your email first — check your inbox for the confirmation link.");
+          }
+          throw error;
+        }
+        navigate("/", { replace: true });
       }
-      navigate("/", { replace: true });
     } catch (err: any) {
       toast({
         variant: "destructive",
