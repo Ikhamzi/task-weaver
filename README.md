@@ -53,34 +53,9 @@ Built with **React + Vite + Tailwind** on the frontend and **Supabase (Postgres 
 
 
 ## ☁️ Deploy Frontend to Vercel
+Agent Live on : https://task-weaver-pi.vercel.app/
 
-1. Push your repo to GitHub.
-2. Go to [vercel.com/new](https://vercel.com/new) → Import the repo.
-3. **Framework preset**: Vite (auto-detected).
-4. **Build command**: `npm run build`
-5. **Output directory**: `dist`
-6. Add **Environment Variables**:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_PUBLISHABLE_KEY`
-   - `VITE_SUPABASE_PROJECT_ID`
-7. Click **Deploy**.
-
-After deployment, add your Vercel URL to **Supabase → Authentication → URL Configuration → Redirect URLs**.
-
----
-
-## 🟣 Deploy Frontend to Render
-
-> Render works great for static Vite sites too.
-
-1. [dashboard.render.com](https://dashboard.render.com) → **New → Static Site**.
-2. Connect your GitHub repo.
-3. **Build command**: `npm install && npm run build`
-4. **Publish directory**: `dist`
-5. Add the same `VITE_*` environment variables as above.
-6. Click **Create Static Site**.
-
-> ⚠️ The **backend (Supabase)** doesn't need Render — edge functions run on Supabase's infrastructure. Render is only used here to host the static frontend if you prefer it over Vercel.
+>⚠️ The **backend (Supabase)** doesn't need Render — edge functions run on Supabase's infrastructure. Render is only used here to host the static frontend if you prefer it over Vercel.
 
 ---
 
@@ -94,16 +69,6 @@ After signing up, send prompts like:
 - *"Plan a weekend trip and show me the budget"*
 
 The agent will reason, call tools, update your dashboard panels in real-time, and return a summary.
-
----
-
-## ✉️ Enable Real Email Sending (Optional)
-
-By default, the `send_email` tool **logs to console only**. To send real email:
-
-1. Configure a verified email domain in Cloud → Emails (or use Resend).
-2. Replace the mock in `supabase/functions/agent-run/index.ts` (search for `send_email`) with a real call to your email provider.
-3. Redeploy the function.
 
 ---
 
