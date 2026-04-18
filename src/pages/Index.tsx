@@ -221,7 +221,7 @@ const Index = () => {
                 </Button>
               </div>
               <p className="text-[10px] text-muted-foreground text-center mt-2">
-                Aether can create tasks, schedule events, send emails (mock) and search the web.
+                Aether can create tasks, schedule events, send emails and search the web.
               </p>
             </div>
           </div>
