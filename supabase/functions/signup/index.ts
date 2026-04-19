@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     // Send welcome email via Resend
     const html = `
       <div style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; line-height: 1.6; color: #333;">
-        <h1 style="color: #6366f1;">Welcome to Aether, ${name || user.user.email.split('@')[0]}!</h1>
+        <h1 style="color: #6366f1;">Welcome to Aether, ${name || (user.user.email ?? email).split('@')[0]}!</h1>
         <p>Your account has been created successfully.</p>
         <p><strong>Sign in here:</strong></p>
         <a href="${origin}/auth" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 500;">Sign In</a>
