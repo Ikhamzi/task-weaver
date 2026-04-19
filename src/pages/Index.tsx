@@ -5,10 +5,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, Send, LogOut, ListChecks, CalendarClock, Plus, Loader2 } from "lucide-react";
+import { Sparkles, Send, LogOut, ListChecks, CalendarClock, Plus, Loader2, PanelRight } from "lucide-react";
 import { ChatBubble, ChatMessage } from "@/components/ChatBubble";
 import { TasksPanel } from "@/components/TasksPanel";
 import { EventsPanel } from "@/components/EventsPanel";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const SUGGESTIONS = [
   "Plan a weekend trip to Goa under ₹10,000 and email me the itinerary",
