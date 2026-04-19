@@ -5,10 +5,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, Send, LogOut, ListChecks, CalendarClock, Plus, Loader2 } from "lucide-react";
+import { Sparkles, Send, LogOut, ListChecks, CalendarClock, Plus, Loader2, PanelRight } from "lucide-react";
 import { ChatBubble, ChatMessage } from "@/components/ChatBubble";
 import { TasksPanel } from "@/components/TasksPanel";
 import { EventsPanel } from "@/components/EventsPanel";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const SUGGESTIONS = [
   "Plan a weekend trip to Goa under ₹10,000 and email me the itinerary",
@@ -161,10 +162,44 @@ const Index = () => {
             <div className="text-[10px] text-muted-foreground">AI Task Agent</div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <Button variant="glass" size="sm" onClick={newConversation}>
-            <Plus className="w-3.5 h-3.5" /> New chat
+            <Plus className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">New chat</span>
           </Button>
+          {/* Mobile: open Tasks/Schedule sheet */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="lg:hidden" title="Tasks & Schedule">
+                <PanelRight className="w-4 h-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[88vw] sm:w-[400px] p-0 flex flex-col bg-card/95 backdrop-blur-md">
+              <div className="flex border-b border-border/60 mt-2">
+                <button
+                  onClick={() => setActiveTab("tasks")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-sm font-medium transition ${
+                    activeTab === "tasks" ? "text-foreground border-b-2 border-primary" : "text-muted-foreground"
+                  }`}
+                >
+                  <ListChecks className="w-4 h-4" /> Tasks
+                </button>
+                <button
+                  onClick={() => setActiveTab("events")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-sm font-medium transition ${
+                    activeTab === "events" ? "text-foreground border-b-2 border-primary" : "text-muted-foreground"
+                  }`}
+                >
+                  <CalendarClock className="w-4 h-4" /> Schedule
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto scrollbar-thin pt-3">
+                {activeTab === "tasks"
+                  ? <TasksPanel refreshKey={panelKey} />
+                  : <EventsPanel refreshKey={panelKey} />}
+              </div>
+            </SheetContent>
+          </Sheet>
           <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} title="Sign out">
             <LogOut className="w-4 h-4" />
           </Button>
@@ -175,7 +210,7 @@ const Index = () => {
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_340px] overflow-hidden">
         {/* Chat */}
         <main className="flex flex-col overflow-hidden">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-thin px-4 md:px-8 py-6 space-y-5">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-thin px-3 sm:px-6 md:px-8 py-4 sm:py-6 space-y-5">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center max-w-xl mx-auto">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-primary flex items-center justify-center glow mb-4">
