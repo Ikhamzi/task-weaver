@@ -13,7 +13,7 @@ Built with **React + Vite + Tailwind** on the frontend and a self-hosted **Expre
 - 📅 Calendar event scheduling
 - 🔍 Real-time web search (DuckDuckGo)
 - ✉️ Email tool (via Resend — optional, see `server/.env.example`)
-- 🔐 Google OAuth login, sessions via httpOnly JWT cookie
+- 🔐 Email/password **or** Google OAuth login, sessions via httpOnly JWT cookie
 - 💬 Chat UI with live-updating Tasks & Events side panels
 - 🌙 Dark "agentic" theme with custom design system
 
@@ -26,7 +26,8 @@ Built with **React + Vite + Tailwind** on the frontend and a self-hosted **Expre
 | Frontend | React 18, Vite 5, TypeScript, Tailwind CSS, shadcn/ui       |
 | Backend  | Express + TypeScript (Node), Postgres 16 (Docker)           |
 | AI       | Google Gemini (`gemini-flash-latest`, direct API, OpenAI-compatible endpoint) |
-| Auth     | Google OAuth 2.0                                             |
+| Auth     | Email/password + Google OAuth 2.0, JWT cookie sessions       |
+| Deploy   | Docker (single image, see `Dockerfile`) → AWS App Runner + RDS |
 
 ---
 
@@ -47,7 +48,9 @@ Built with **React + Vite + Tailwind** on the frontend and a self-hosted **Expre
 │       ├── lib/gemini.ts   # AI agent reasoning loop + tools
 │       └── lib/googleOAuth.ts
 ├── db/init/001_schema.sql  # Postgres schema, auto-applied by Docker
-├── docker-compose.yml      # Postgres 16 container
+├── docker-compose.yml      # Postgres 16 container (local dev)
+├── Dockerfile              # Production image: builds + serves frontend and API together
+├── DEPLOYMENT.md           # AWS App Runner + RDS deployment guide
 └── package.json
 ```
 
@@ -58,11 +61,19 @@ Built with **React + Vite + Tailwind** on the frontend and a self-hosted **Expre
 1. **Database**: `docker compose up -d` (starts Postgres on `localhost:5432`, schema auto-applied on first run).
 2. **Backend**: `cd server && cp .env.example .env` (fill in `GEMINI_API_KEY`, `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, `JWT_SECRET`), then `npm install && npm run dev` (listens on `:4000`).
 3. **Frontend**: from the repo root, `npm install && npm run dev` (listens on `:8080`, proxies `/api` to the backend).
-4. Open `http://localhost:8080` and sign in with Google.
+4. Open `http://localhost:8080` and sign up/sign in (email/password or Google).
 
-### Google OAuth setup
+Email/password sign-up works out of the box with no extra setup — Google OAuth is optional.
+
+### Google OAuth setup (optional)
 
 Create an OAuth 2.0 Client ID in [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → Web application, with authorized redirect URI `http://localhost:4000/api/auth/google/callback` (match `GOOGLE_REDIRECT_URI` in `server/.env`).
+
+---
+
+## ☁️ Deploying
+
+The app ships as a single Docker image (frontend + API on one port) — see **[DEPLOYMENT.md](./DEPLOYMENT.md)** for the full AWS App Runner + RDS walkthrough.
 
 ---
 
