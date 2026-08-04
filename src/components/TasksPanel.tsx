@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { CheckCircle2, Circle, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -20,13 +20,12 @@ export const TasksPanel = ({ refreshKey }: { refreshKey: number }) => {
   const { toast } = useToast();
 
   const load = async () => {
-    const { data, error } = await supabase
-      .from("tasks")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(20);
-    if (error) toast({ variant: "destructive", title: "Failed to load tasks" });
-    else setTasks((data ?? []) as Task[]);
+    try {
+      const data = await api.get<Task[]>("/tasks?limit=20");
+      setTasks(data ?? []);
+    } catch {
+      toast({ variant: "destructive", title: "Failed to load tasks" });
+    }
     setLoading(false);
   };
 
@@ -34,12 +33,12 @@ export const TasksPanel = ({ refreshKey }: { refreshKey: number }) => {
 
   const toggle = async (t: Task) => {
     const next = t.status === "done" ? "pending" : "done";
-    await supabase.from("tasks").update({ status: next }).eq("id", t.id);
+    await api.patch(`/tasks/${t.id}`, { status: next });
     load();
   };
 
   const remove = async (id: string) => {
-    await supabase.from("tasks").delete().eq("id", id);
+    await api.delete(`/tasks/${id}`);
     load();
   };
 

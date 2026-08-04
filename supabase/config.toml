@@ -1,4 +1,0 @@
-project_id = "wtizrycjhqometzmcaey"
-
-[functions.agent-run]
-verify_jwt = false

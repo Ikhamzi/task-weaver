@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { CalendarClock, MapPin, Loader2 } from "lucide-react";
 
 interface Event {
@@ -17,13 +17,9 @@ export const EventsPanel = ({ refreshKey }: { refreshKey: number }) => {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("events")
-        .select("*")
-        .gte("start_time", new Date(Date.now() - 86400000).toISOString())
-        .order("start_time", { ascending: true })
-        .limit(15);
-      setEvents((data ?? []) as Event[]);
+      const from = new Date(Date.now() - 86400000).toISOString();
+      const data = await api.get<Event[]>(`/events?from=${encodeURIComponent(from)}&limit=15`);
+      setEvents(data ?? []);
       setLoading(false);
     })();
   }, [refreshKey]);

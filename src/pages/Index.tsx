@@ -1,11 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, Send, LogOut, ListChecks, CalendarClock, Plus, Loader2 } from "lucide-react";
+import { Sparkles, Send, LogOut, ListChecks, CalendarClock, Plus, Loader2, ChevronDown } from "lucide-react";
 import { ChatBubble, ChatMessage } from "@/components/ChatBubble";
 import { TasksPanel } from "@/components/TasksPanel";
 import { EventsPanel } from "@/components/EventsPanel";
@@ -18,7 +26,7 @@ const SUGGESTIONS = [
 ];
 
 const Index = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -38,21 +46,12 @@ const Index = () => {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data: existing } = await supabase
-        .from("conversations")
-        .select("id")
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const existing = await api.get<{ id: string } | null>("/conversations/latest");
       if (existing) {
         setConversationId(existing.id);
       } else {
-        const { data: created } = await supabase
-          .from("conversations")
-          .insert({ user_id: user.id, title: "New conversation" })
-          .select("id")
-          .single();
-        if (created) setConversationId(created.id);
+        const created = await api.post<{ id: string }>("/conversations");
+        setConversationId(created.id);
       }
     })();
   }, [user]);
@@ -61,12 +60,8 @@ const Index = () => {
   useEffect(() => {
     if (!conversationId) return;
     (async () => {
-      const { data } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
-      setMessages((data ?? []) as ChatMessage[]);
+      const data = await api.get<ChatMessage[]>(`/conversations/${conversationId}/messages`);
+      setMessages(data ?? []);
     })();
   }, [conversationId]);
 
@@ -77,15 +72,9 @@ const Index = () => {
 
   const newConversation = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("conversations")
-      .insert({ user_id: user.id, title: "New conversation" })
-      .select("id")
-      .single();
-    if (data) {
-      setConversationId(data.id);
-      setMessages([]);
-    }
+    const created = await api.post<{ id: string }>("/conversations");
+    setConversationId(created.id);
+    setMessages([]);
   };
 
   const send = async () => {
@@ -108,24 +97,17 @@ const Index = () => {
     setMessages((m) => [...m, tempUser, tempAssistant]);
 
     try {
-      const { data, error } = await supabase.functions.invoke("agent-run", {
-        body: { conversationId, message: text },
-      });
-      if (error) throw error;
+      await api.post("/agent/run", { conversationId, message: text });
 
       // Reload messages from DB to get real records & tool_calls
-      const { data: fresh } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
-      setMessages((fresh ?? []) as ChatMessage[]);
+      const fresh = await api.get<ChatMessage[]>(`/conversations/${conversationId}/messages`);
+      setMessages(fresh ?? []);
       setPanelKey((k) => k + 1);
-    } catch (err: any) {
+    } catch (err) {
       toast({
         variant: "destructive",
         title: "Agent error",
-        description: err?.message ?? "Something went wrong.",
+        description: err instanceof ApiError ? err.message : "Something went wrong.",
       });
       setMessages((m) => m.filter((msg) => !msg.pending && !msg.id.startsWith("tmp-")));
     } finally {
@@ -148,6 +130,8 @@ const Index = () => {
     );
   }
 
+  const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email;
+
   return (
     <div className="h-screen flex flex-col">
       {/* Header */}
@@ -165,9 +149,21 @@ const Index = () => {
           <Button variant="glass" size="sm" onClick={newConversation}>
             <Plus className="w-3.5 h-3.5" /> New chat
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} title="Sign out">
-            <LogOut className="w-4 h-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="glass" size="sm" className="gap-1.5">
+                <span className="max-w-[140px] truncate">{fullName}</span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel className="truncate">{fullName}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => signOut().then(() => navigate("/auth", { replace: true }))}>
+                <LogOut className="w-4 h-4 mr-2" /> Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 

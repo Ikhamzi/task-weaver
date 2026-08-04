@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Backend secrets (Gemini/Google OAuth/DB/Resend keys) — never commit
+server/.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
