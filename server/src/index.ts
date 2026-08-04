@@ -1,3 +1,6 @@
+import path from "node:path";
+import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import cookieParser from "cookie-parser";
 import { env } from "./env.js";
@@ -6,6 +9,8 @@ import { tasksRouter } from "./routes/tasks.js";
 import { eventsRouter } from "./routes/events.js";
 import { conversationsRouter } from "./routes/conversations.js";
 import { agentRouter } from "./routes/agent.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 process.on("unhandledRejection", (err) => {
   console.error("Unhandled rejection (process kept alive):", err);
@@ -23,6 +28,16 @@ app.use("/api/tasks", tasksRouter);
 app.use("/api/events", eventsRouter);
 app.use("/api/conversations", conversationsRouter);
 app.use("/api/agent", agentRouter);
+
+// In the production container, the frontend build is copied alongside the
+// compiled server so one process/port serves both — no separate static host needed.
+const clientDist = path.join(__dirname, "../../client");
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  app.get(/^(?!\/api).*/, (_req, res) => {
+    res.sendFile(path.join(clientDist, "index.html"));
+  });
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
