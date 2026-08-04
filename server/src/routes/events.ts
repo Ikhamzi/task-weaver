@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { pool } from "../db.js";
 import { requireAuth } from "../middleware/requireAuth.js";
+import { asyncHandler } from "../lib/asyncHandler.js";
 
 export const eventsRouter = Router();
 eventsRouter.use(requireAuth);
 
-eventsRouter.get("/", async (req, res) => {
+eventsRouter.get("/", asyncHandler(async (req, res) => {
   const from = typeof req.query.from === "string" ? req.query.from : new Date(Date.now() - 86400000).toISOString();
   const limit = Math.min(Number(req.query.limit ?? 15) || 15, 100);
   const { rows } = await pool.query(
@@ -13,9 +14,9 @@ eventsRouter.get("/", async (req, res) => {
     [req.user!.id, from, limit],
   );
   res.json(rows);
-});
+}));
 
-eventsRouter.post("/", async (req, res) => {
+eventsRouter.post("/", asyncHandler(async (req, res) => {
   const { title, description, location, start_time, end_time } = req.body ?? {};
   if (!title || !start_time) return res.status(400).json({ error: "title and start_time are required" });
   const { rows } = await pool.query(
@@ -24,4 +25,4 @@ eventsRouter.post("/", async (req, res) => {
     [req.user!.id, title, description ?? null, location ?? null, start_time, end_time ?? null],
   );
   res.status(201).json(rows[0]);
-});
+}));

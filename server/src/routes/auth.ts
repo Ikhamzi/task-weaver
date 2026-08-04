@@ -6,6 +6,7 @@ import { googleAuthUrl, exchangeCodeForProfile } from "../lib/googleOAuth.js";
 import { signSession } from "../lib/jwt.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import { requireAuth } from "../middleware/requireAuth.js";
+import { asyncHandler } from "../lib/asyncHandler.js";
 
 export const authRouter = Router();
 
@@ -20,7 +21,7 @@ function setSessionCookie(res: import("express").Response, token: string) {
   });
 }
 
-authRouter.post("/signup", async (req, res) => {
+authRouter.post("/signup", asyncHandler(async (req, res) => {
   const { email, password, first_name, last_name } = req.body ?? {};
   if (!email || !password || String(password).length < 8) {
     return res.status(400).json({ error: "Email and a password of at least 8 characters are required" });
@@ -42,9 +43,9 @@ authRouter.post("/signup", async (req, res) => {
   const token = signSession({ sub: user.id, email: user.email, first_name: user.first_name, last_name: user.last_name });
   setSessionCookie(res, token);
   res.status(201).json(user);
-});
+}));
 
-authRouter.post("/login", async (req, res) => {
+authRouter.post("/login", asyncHandler(async (req, res) => {
   const { email, password } = req.body ?? {};
   if (!email || !password) return res.status(400).json({ error: "Email and password are required" });
 
@@ -63,7 +64,7 @@ authRouter.post("/login", async (req, res) => {
   const token = signSession({ sub: user.id, email: user.email, first_name: user.first_name, last_name: user.last_name });
   setSessionCookie(res, token);
   res.json({ id: user.id, email: user.email, first_name: user.first_name, last_name: user.last_name });
-});
+}));
 
 authRouter.get("/google", (req, res) => {
   const state = crypto.randomBytes(16).toString("hex");
